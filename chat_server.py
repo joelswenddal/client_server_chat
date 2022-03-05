@@ -18,7 +18,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
         while True:
             data = conn.recv(1024)
-            #print("Data received is: ", data)
+            print("Length of data is ", len(data))
 
             if not data:
                 break
@@ -29,7 +29,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 print(data)
 
             else:
-                print("STATUS: Client pressed /q to quit chat. Goodbye")
+                print("STATUS: Client pressed /q to leave chat. Goodbye")
                 break
 
             if exchange_count == 0:
@@ -46,8 +46,17 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 print(">", end="")
                 response = input()
 
+            # add delimiter
+            response += '\r\n'
+
             conn.sendall(bytes(response, 'UTF-8'))
+
+            print("Length of message sent was:", len(response))
             exchange_count += 1
             # conn.sendall(data)
+
+            if response == '/q':
+                print("STATUS: You pressed /q to leave the chat. Goodbye")
+                break
 
         s.close()

@@ -1,10 +1,17 @@
-
+# Student: Joel Swenddal
+# Course: CS 372
+# Semester: Winter 2022
+# Assignment: Project 4
+# Description: Program uses a socket to enable a simple synchronous chat between a client and server
+# Sources:
+# 1) Kurose and Ross, Computer Networking: A Top-Down Approach, 7th Edition, Pearson
+# 2) Python 3 Documentation: http://docs.python.org/3/library/socket.html
 
 import socket
 import sys
 
-HOST = "127.0.0.1"  # The server's hostname or IP address
-PORT = 65432  # The port used by the server
+HOST = "127.0.0.1"
+PORT = 65432
 MSGLEN = 1024
 
 
@@ -18,7 +25,6 @@ def setSocket(serverName, serverPort):
     try:
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # s.setblocking(0)
 
     except socket.error as msg:
         print('Failed to create socket. Error code: ' +
@@ -27,16 +33,24 @@ def setSocket(serverName, serverPort):
 
     s.connect((serverName, serverPort))
 
+    print("Connected to ", HOST, " on port ", PORT)
+
     return s
 
 
 def sendMessage(connected_socket):
-
+    '''
+    Takes a connected socket and prompts the user for input
+    for a message. Assembles and sends the message to the server. 
+    Returns the number of bytes sent or -1 if the client is quitting
+    the connection
+    '''
     print(">", end="")
     message = input()
     quit = False
 
     while message == '':
+        print("You cannot send an empty message")
         print("Type /q to quit")
         print("Enter message to send...")
         print(">", end="")
@@ -45,6 +59,9 @@ def sendMessage(connected_socket):
     if message == "/q":
         print("STATUS: You pressed /q to leave the chat. Goodbye")
         quit = True
+
+    # add delimiter
+    message += '>\r\n<'
 
     bytes_sent = 0
 
@@ -55,8 +72,8 @@ def sendMessage(connected_socket):
             break
         bytes_sent = bytes_sent + sent
 
-    # if message sent to client is the quit signal
-    # signal that client should close too (return -1)
+    # if message sent to server is the quit signal
+    # signal that server should close too (return -1)
     if quit:
         bytes_sent = -1
 
@@ -64,12 +81,16 @@ def sendMessage(connected_socket):
 
 
 def recvMessage(connected_socket):
-
+    '''
+    Receives a message from a server. Returns the number
+    of bytes received or -1 in the case of an empty transmission
+    or a message that the server is ending the connection
+    '''
     response = bytearray()
-    bytes_received = 0
+    #bytes_received = 0
     buffer = b''
 
-    while b'\r\n' not in buffer:
+    while b'>\r\n<' not in buffer:
         #print("Waiting on receive from server")
         part = connected_socket.recv(MSGLEN)
 
@@ -77,28 +98,18 @@ def recvMessage(connected_socket):
             return -1
 
         buffer += part
-        print(buffer)
+        # print(buffer)
 
-    response, sep, buffer = buffer.partition(b'\r\n')
-
-    #print("Part received: ", part)
-    # if len(part) <= 0:
-    # break
-    # return
-    # response.extend(part)
-    #bytes_received = bytes_received + len(part)
+    response, sep, buffer = buffer.partition(b'>\r\n<')
 
     str_data = response.decode('utf-8')
-    #print("Decoded response: ", str_data)
-    #print("Response length is ", bytes_received)
 
     if str_data == "/q":
         print("STATUS: Server pressed /q to leave chat. Goodbye")
         return -1
 
-    # print(f"{data!r}")
     print(str_data)
-    print("Length of received message is: ", len(response))
+    #print("Length of received message is: ", len(response))
 
     return len(response)
 
@@ -111,7 +122,7 @@ def main():
     while True:
 
         send_result = sendMessage(s)
-        print("Bytes sent", send_result)
+        #print("Bytes sent", send_result)
 
         if send_result < 0:
             break
